@@ -86,7 +86,7 @@ def assign(rows: list[dict], splits: dict[str, list[str]]) -> dict[str, str]:
     return lookup
 
 
-def summarise(rows: list[dict], splits: dict[str, list[str]]) -> str:
+def summarise(rows: list[dict], splits: dict[str, list[str]]) -> str:                    #turns the split assignment into a table of values 
     lookup = assign(rows, splits)
     counts: dict[tuple[str, str], int] = defaultdict(int)
     types: dict[tuple[str, str], set[str]] = defaultdict(set)
