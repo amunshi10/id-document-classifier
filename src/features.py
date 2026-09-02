@@ -50,7 +50,7 @@ PREPROCESS = transforms.Compose([
 ])
 
 
-class FrameDataset(Dataset):
+class FrameDataset(Dataset):                                            #protocol for handing out data for a certain training loop
     def __init__(self, rows: list[dict], variant: str):
         self.root = PROC_DIR / variant
         self.rows = rows
@@ -59,7 +59,7 @@ class FrameDataset(Dataset):
         return len(self.rows)
 
     def __getitem__(self, i: int):
-        img = Image.open(self.root / self.rows[i]["path"]).convert("RGB")
+        img = Image.open(self.root / self.rows[i]["path"]).convert("RGB")   
         return PREPROCESS(img), i
 
 
