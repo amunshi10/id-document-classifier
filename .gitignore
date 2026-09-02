@@ -1,0 +1,15 @@
+# Dataset: rebuild with `python src/ingest.py` rather than committing ~420MB of JPEG
+data/raw/
+data/processed/
+*.zip
+
+# Cached ResNet50 embeddings: regenerate with `python src/features.py` (~20 min)
+models/*.npz
+
+# Note: models/head_*.pt are deliberately NOT ignored. Each is 26 KB, and committing
+# them lets anyone clone the repo and run predict.py without rebuilding the dataset.
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/

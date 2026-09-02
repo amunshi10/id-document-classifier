@@ -1,0 +1,68 @@
+MIDV-500 document classification -- variant=crop
+ResNet50 (ImageNet, frozen) + linear head
+Split mode: clip
+================================================================
+
+frame accuracy   0.9710  (670/690)
+macro F1         0.9710
+majority baseline 0.3478
+
+per-class:
+  class               prec  recall      n
+  driving_licence    0.986   0.959    220
+  passport           0.942   0.991    230
+  id_card            0.987   0.963    240
+
+confusion matrix (rows = true, cols = predicted):
+                     driving_lice      passport       id_card
+  driving_licence             211             7             2
+  passport                      1           228             1
+  id_card                       2             7           231
+
+clip accuracy (majority vote over ~30 frames)  0.9855  (68/69)
+
+per capture condition:
+  clutter      1.0000  (n=150)
+  hand         0.9833  (n=120)
+  keyboard     0.9941  (n=170)
+  partial      0.8583  (n=120)
+  table        1.0000  (n=130)
+
+per held-out document type:
+  01_alb_id                  1.0000  (n=10)
+  02_aut_drvlic_new          1.0000  (n=20)
+  03_aut_id_old              1.0000  (n=10)
+  04_aut_id                  0.9333  (n=30)
+  05_aze_passport            1.0000  (n=10)
+  06_bra_passport            1.0000  (n=10)
+  09_chn_id                  1.0000  (n=10)
+  10_cze_id                  1.0000  (n=10)
+  11_cze_passport            1.0000  (n=20)
+  12_deu_drvlic_new          0.9333  (n=30)
+  13_deu_drvlic_old          1.0000  (n=20)
+  14_deu_id_new              1.0000  (n=20)
+  15_deu_id_old              0.9000  (n=20)
+  16_deu_passport_new        1.0000  (n=30)
+  17_deu_passport_old        1.0000  (n=20)
+  19_esp_drvlic              1.0000  (n=10)
+  20_esp_id_new              0.9000  (n=20)
+  23_fin_drvlic              0.9500  (n=20)
+  25_grc_passport            1.0000  (n=10)
+  26_hrv_drvlic              1.0000  (n=10)
+  27_hrv_passport            1.0000  (n=10)
+  28_hun_passport            1.0000  (n=10)
+  29_irn_drvlic              0.9750  (n=40)
+  31_jpn_drvlic              1.0000  (n=10)
+  32_lva_passport            1.0000  (n=20)
+  33_mac_id                  1.0000  (n=10)
+  34_mda_passport            1.0000  (n=30)
+  35_nor_drvlic              1.0000  (n=20)
+  36_pol_drvlic              0.8750  (n=40)
+  39_rus_internalpassport    0.9667  (n=30)
+  40_srb_id                  0.9000  (n=20)
+  42_svk_id                  1.0000  (n=20)
+  43_tur_id                  0.9500  (n=20)
+  44_ukr_id                  1.0000  (n=30)
+  45_ukr_passport            1.0000  (n=10)
+  46_ury_passport            0.9500  (n=20)
+  50_xpo_id                  1.0000  (n=10)
