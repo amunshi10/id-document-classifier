@@ -1,0 +1,40 @@
+==================================================================
+A. Training seed varied, split held fixed
+==================================================================
+  best val macro-F1 0.9277 at epoch 7
+  seed 1000: acc 0.8171  macroF1 0.8276
+  best val macro-F1 0.8548 at epoch 7
+  seed 1001: acc 0.8143  macroF1 0.8260
+  best val macro-F1 0.8655 at epoch 7
+  seed 1002: acc 0.8100  macroF1 0.8221
+  best val macro-F1 0.9143 at epoch 6
+  seed 1003: acc 0.8129  macroF1 0.8250
+  best val macro-F1 0.9125 at epoch 3
+  seed 1004: acc 0.8171  macroF1 0.8265
+
+  mean 0.8143  sd 0.0027  range [0.8100, 0.8171]
+
+==================================================================
+B. Split seed varied -- different document designs held out each time
+==================================================================
+  best val macro-F1 0.9305 at epoch 59
+  split 2000: acc 0.5714  macroF1 0.5110  <- 09_chn_id in test
+      held out: 09_chn_id, 16_deu_passport_new, 17_deu_passport_old, 29_irn_drvlic, 35_nor_drvlic, 37_prt_id, 50_xpo_id
+  best val macro-F1 0.8039 at epoch 9
+  split 2001: acc 0.8529  macroF1 0.8596
+      held out: 04_aut_id, 18_dza_passport, 19_esp_drvlic, 24_fin_id, 30_ita_drvlic, 43_tur_id, 45_ukr_passport
+  best val macro-F1 0.8112 at epoch 59
+  split 2002: acc 0.6557  macroF1 0.6490
+      held out: 11_cze_passport, 30_ita_drvlic, 33_mac_id, 35_nor_drvlic, 37_prt_id, 46_ury_passport, 50_xpo_id
+  best val macro-F1 0.7582 at epoch 2
+  split 2003: acc 0.5843  macroF1 0.5969  <- 09_chn_id in test
+      held out: 09_chn_id, 13_deu_drvlic_old, 15_deu_id_old, 21_esp_id_old, 27_hrv_passport, 30_ita_drvlic, 46_ury_passport
+  best val macro-F1 0.4730 at epoch 2
+  split 2004: acc 0.7243  macroF1 0.6983
+      held out: 06_bra_passport, 10_cze_id, 13_deu_drvlic_old, 21_esp_id_old, 22_est_id, 29_irn_drvlic, 34_mda_passport
+
+  mean 0.6777  sd 0.1033  range [0.5714, 0.8529]
+
+  splits WITH 09_chn_id in test:    mean 0.5779 (n=2)
+  splits WITHOUT 09_chn_id in test: mean 0.7443 (n=3)
+  -> that single document type moves the headline by 0.166

@@ -1,0 +1,70 @@
+46 document types across 6 folds | variant=crop
+
+  best val macro-F1 0.7988 at epoch 59
+fold 0: acc 0.7133  macroF1 0.6751  (9 types held out)
+  best val macro-F1 0.6914 at epoch 28
+fold 1: acc 0.8150  macroF1 0.8128  (8 types held out)
+  best val macro-F1 0.6030 at epoch 56
+fold 2: acc 0.6587  macroF1 0.6417  (8 types held out)
+  best val macro-F1 0.7752 at epoch 35
+fold 3: acc 0.6414  macroF1 0.6194  (7 types held out)
+  best val macro-F1 0.6720 at epoch 12
+fold 4: acc 0.7357  macroF1 0.7094  (7 types held out)
+  best val macro-F1 0.7121 at epoch 3
+fold 5: acc 0.6843  macroF1 0.6869  (7 types held out)
+
+============================================================
+CROSS-VALIDATED ACCURACY  0.7081 +/- 0.0572
+CROSS-VALIDATED MACRO F1  0.6909 +/- 0.0619
+range [0.6414, 0.8150]
+============================================================
+
+Every document type, scored while held out:
+  29_irn_drvlic              0.000    <-- weak
+  09_chn_id                  0.010    <-- weak
+  14_deu_id_new              0.010    <-- weak
+  26_hrv_drvlic              0.030  #  <-- weak
+  35_nor_drvlic              0.110  ###  <-- weak
+  43_tur_id                  0.130  ####  <-- weak
+  39_rus_internalpassport    0.290  #########  <-- weak
+  03_aut_id_old              0.330  ##########  <-- weak
+  23_fin_drvlic              0.400  ############  <-- weak
+  37_prt_id                  0.410  ############  <-- weak
+  21_esp_id_old              0.500  ###############  <-- weak
+  02_aut_drvlic_new          0.520  ################  <-- weak
+  33_mac_id                  0.580  #################  <-- weak
+  15_deu_id_old              0.640  ###################
+  01_alb_id                  0.700  #####################
+  31_jpn_drvlic              0.700  #####################
+  46_ury_passport            0.750  ######################
+  22_est_id                  0.760  #######################
+  36_pol_drvlic              0.770  #######################
+  13_deu_drvlic_old          0.790  ########################
+  24_fin_id                  0.800  ########################
+  38_rou_drvlic              0.820  #########################
+  32_lva_passport            0.850  ##########################
+  44_ukr_id                  0.850  ##########################
+  19_esp_drvlic              0.890  ###########################
+  11_cze_passport            0.890  ###########################
+  05_aze_passport            0.900  ###########################
+  41_srb_passport            0.910  ###########################
+  07_chl_id                  0.920  ############################
+  17_deu_passport_old        0.920  ############################
+  12_deu_drvlic_new          0.930  ############################
+  04_aut_id                  0.930  ############################
+  10_cze_id                  0.940  ############################
+  18_dza_passport            0.940  ############################
+  40_srb_id                  0.940  ############################
+  16_deu_passport_new        0.960  #############################
+  28_hun_passport            0.960  #############################
+  50_xpo_id                  0.970  #############################
+  34_mda_passport            0.970  #############################
+  42_svk_id                  0.980  #############################
+  45_ukr_passport            0.980  #############################
+  30_ita_drvlic              0.980  #############################
+  25_grc_passport            0.980  #############################
+  27_hrv_passport            1.000  ##############################
+  20_esp_id_new              1.000  ##############################
+  06_bra_passport            1.000  ##############################
+
+13 of 46 document types score below 0.60 when unseen.
