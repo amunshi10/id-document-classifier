@@ -11,12 +11,45 @@ See [DATASET.md](DATASET.md) for the full data rationale.
 
 ## Headline result
 
-**70.8% ± 5.7% accuracy**, cross-validated across six folds of held-out document designs,
-against a ~43% majority-class baseline.
+There are two honest numbers, because there are two different deployment questions. Which
+one applies to you depends on whether the document design in front of the model is one it
+was trained on.
 
-The error bar is the point. An earlier version of this README reported **82.6%** from a
-single train/test split. That number was real but misleading, and the story of how it got
-corrected is the most useful thing in this repository.
+| Regime | Question it answers | Accuracy |
+|---|---|---|
+| **Known design** | A user photographs a document type the model was trained on. | **96.2% ± 1.0%** |
+| **Unseen design** | A document design appears that nobody trained on. | **70.8% ± 5.7%** |
+
+Majority-class baseline is ~43%.
+
+Both are measured on this repository's own code (`train.py --split-mode clip` and
+`crossval.py`). Neither is the "real" number on its own — quoting only the first overstates
+the system, quoting only the second understates it, and the gap between them is the single
+most useful thing this project has to say.
+
+**Which one you should care about:** a KYC pipeline supporting a fixed list of countries
+enumerates its document types and trains on all of them — that is the 96% regime, and it is
+genuinely strong. A pipeline that must handle a design nobody anticipated is in the 70%
+regime and should not ship without a reject option.
+
+### An important caveat on the 96%
+
+MIDV-500 contains exactly **one physical specimen per document design**. So the known-design
+number is measured by holding out whole *videos* of the same laminated card the model
+trained on. That tests new capture conditions — angle, lighting, background — but not a
+different person's licence of the same design.
+
+Real deployment sees many individuals' documents of one design, varying in photo, name and
+wear. This dataset cannot measure that, so **96.2% is an upper bound** on known-design
+performance, not an estimate of it. The 70.8% figure has no equivalent caveat: designs held
+out under cross-validation are genuinely unseen.
+
+### On the number that used to be here
+
+An earlier version of this README reported **82.6%** from a single train/test split. That
+number was real — it is the accuracy on those particular 7 held-out designs — but it was
+presented as a general estimate, which it was not. The next section is how that was caught,
+and it is the most useful thing in this repository.
 
 ## Why one split was not enough
 
@@ -59,9 +92,18 @@ you split determines whether your accuracy means anything at all.
 
 | Split rule | Accuracy | What it actually measures |
 |---|---|---|
-| `random` (by frame) | 97.3% | Nothing. Frames 11 and 12 of one 3-second video land on opposite sides. |
-| `clip` (by video) | 97.1% | Nothing. Every test clip shows the *same physical card* as training. |
-| **`doctype`, cross-validated** | **70.8%** | Generalisation to document designs never seen. |
+| `random` (by frame) | 97.4% ± 0.4% | **Nothing.** Frames 11 and 12 of one 3-second video land on opposite sides of the split, so the test set is a copy of the training set. Invalid for any purpose. |
+| `clip` (by video) | 96.2% ± 1.0% | **Known-design performance.** A legitimate measurement — whole videos are held out — but of an easier question, and an upper bound (one specimen per design). |
+| **`doctype`, cross-validated** | **70.8% ± 5.7%** | **Generalisation to designs never seen.** |
+
+The distinction between rows two and three is the one that matters, and it is easy to get
+wrong: both look like "held-out test data", and a reader skimming the code cannot tell them
+apart. Row two answers a real question. It just is not the question you are answering if you
+claim your model generalises.
+
+Row one is not defensible for anything — it is what you get by calling
+`train_test_split` on a dataframe of frames without thinking about where the frames came
+from, and it is worth **26 points** of illusion over row three.
 
 Same model, same features, near-identical training-set size. Reproduce it:
 
