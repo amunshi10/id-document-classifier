@@ -12,8 +12,9 @@ it rather than accept the first run.
 
 The trade-off, stated plainly: cached features mean no random augmentation during
 head training, since every image is embedded once in one fixed form. For a linear
-head on a frozen backbone that costs little. `train.py --finetune` exists for the
-comparison run where augmentation does matter.
+head on a frozen backbone that costs little, and it is what makes the stability and
+cross-validation analysis affordable -- see the README. Fine-tuning with augmentation
+is listed as future work; it is not implemented here.
 
 Usage:
     python src/features.py --variant crop
