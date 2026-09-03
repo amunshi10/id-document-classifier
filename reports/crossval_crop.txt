@@ -19,6 +19,13 @@ CROSS-VALIDATED MACRO F1  0.6909 +/- 0.0619
 range [0.6414, 0.8150]
 ============================================================
 
+Per capture condition, pooled over all folds:
+  clutter      0.7685  (n=920)
+  keyboard     0.7304  (n=920)
+  hand         0.7174  (n=920)
+  table        0.7163  (n=920)
+  partial      0.6152  (n=920)
+
 Every document type, scored while held out:
   29_irn_drvlic              0.000    <-- weak
   09_chn_id                  0.010    <-- weak

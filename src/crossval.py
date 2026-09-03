@@ -62,6 +62,7 @@ def main() -> int:
           f"| variant={args.variant}\n")
 
     accs, f1s, per_type_all = [], [], {}
+    cond_hits: dict[str, list[int]] = defaultdict(list)
     for i in range(args.folds):
         test_types = set(folds[i])
         val_types = set(folds[(i + 1) % args.folds])
@@ -89,6 +90,12 @@ def main() -> int:
             if m.any():
                 per_type_all[dt] = float(np.mean(y[te][m] == pred[m]))
 
+        # Pool correctness per capture condition across folds. Every frame is in
+        # exactly one test fold, so this ends up covering the whole dataset once.
+        correct = (y[te] == pred).astype(int)
+        for cond, ok in zip(data["condition"][te], correct):
+            cond_hits[str(cond)].append(int(ok))
+
         print(f"fold {i}: acc {acc:.4f}  macroF1 {f1:.4f}  ({len(test_types)} types held out)")
 
     print("\n" + "=" * 60)
@@ -96,6 +103,11 @@ def main() -> int:
     print(f"CROSS-VALIDATED MACRO F1  {np.mean(f1s):.4f} +/- {np.std(f1s):.4f}")
     print(f"range [{min(accs):.4f}, {max(accs):.4f}]")
     print("=" * 60)
+
+    print("\nPer capture condition, pooled over all folds:")
+    for cond in sorted(cond_hits, key=lambda c: -np.mean(cond_hits[c])):
+        hits = cond_hits[cond]
+        print(f"  {cond:<12} {np.mean(hits):.4f}  (n={len(hits)})")
 
     print("\nEvery document type, scored while held out:")
     for dt, a in sorted(per_type_all.items(), key=lambda kv: kv[1]):
