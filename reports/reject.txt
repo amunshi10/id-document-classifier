@@ -1,0 +1,51 @@
+4600 in-distribution frames | 400 OOD frames (08_chn_homereturn, 47_usa_bordercrossing, 48_usa_passportcard, 49_usa_ssn82)
+
+  fold 0: tau=0.835
+  fold 1: tau=0.805
+  fold 2: tau=0.700
+  fold 3: tau=0.580
+  fold 4: tau=0.825
+  fold 5: tau=0.435
+
+====================================================================
+HOW WELL DOES CONFIDENCE RANK ANYTHING?  (AUROC, 0.5 = useless)
+====================================================================
+  max-softmax, correct vs incorrect (error detection)     0.681
+  max-softmax, in-distribution vs OOD (novelty detection) 0.597
+  Mahalanobis, correct vs incorrect                       0.583
+  Mahalanobis, in-distribution vs OOD                     0.619
+
+====================================================================
+THRESHOLD SWEEP (pooled over folds)
+====================================================================
+    tau  coverage   sel.acc  OOD kept   <- lower is better
+   0.00   100.0%     71.0%    100.0%
+   0.40    92.4%     73.2%     85.9%
+   0.45    83.7%     74.0%     72.4%
+   0.50    72.9%     76.8%     60.7%
+   0.55    61.9%     79.6%     50.3%
+   0.60    52.9%     82.0%     42.3%
+   0.65    44.6%     83.7%     33.5%
+   0.70    37.8%     85.9%     25.0%
+   0.80    25.8%     87.8%     13.3%
+
+====================================================================
+OPERATING POINT (tau tuned per fold on validation, target 90%)
+====================================================================
+  mean tau across folds        0.697
+  coverage (accepted)          38.3%
+  accuracy on accepted         80.5%
+  accuracy without abstention  71.0%
+  OOD documents wrongly accepted 25.1%
+  OOD documents correctly rejected 74.9%
+
+====================================================================
+REJECTION BY OOD DOCUMENT TYPE
+====================================================================
+  Not all 'other' documents are equally out of distribution. A US passport
+  card is visually an ID card; only the SSN card looks unlike anything the
+  model was trained on. If the score means anything, that should show here.
+  08_chn_homereturn          rejected 91.3%  (n=600)
+  47_usa_bordercrossing      rejected 93.0%  (n=600)
+  48_usa_passportcard        rejected 42.5%  (n=600)
+  49_usa_ssn82               rejected 72.8%  (n=600)

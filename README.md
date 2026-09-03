@@ -335,6 +335,8 @@ passport card is accepted *more readily than real driving licences are*, because
 identity card in every visual respect. Asking a vision model to reject it as "unknown"
 means asking it to reproduce a taxonomic decision that is not present in the pixels.
 
+Full output: [`reports/reject.txt`](reports/reject.txt).
+
 The honest conclusion: **a post-hoc confidence score is the wrong tool for this.** The fix
 is an explicit reject class trained on negatives, or fine-tuning that shapes the feature
 space for the distinction — not a threshold on a head that was never given anywhere to put
