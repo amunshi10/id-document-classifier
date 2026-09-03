@@ -268,10 +268,83 @@ TA19_02.jpg
 
 ---
 
+## Saying "I don't know": a partial success
+
+The classifier has three outputs and always picks one, which is what makes the 70.8%
+regime unsafe. `src/reject.py` adds selective prediction — abstain when the maximum
+softmax probability falls below a threshold τ, tuned **on the validation fold using only
+the three trained classes**, then applied unchanged to the test fold and to the excluded
+`other` documents. Those OOD frames never influence τ; tuning on them and then reporting
+rejection rates against them would be circular.
+
+### It does improve accuracy, at a price you may not want to pay
+
+| τ | Coverage | Selective accuracy | OOD wrongly accepted |
+|---|---|---|---|
+| 0.00 | 100% | 71.0% | 100% |
+| 0.50 | 72.9% | 76.8% | 60.7% |
+| 0.60 | 52.9% | 82.0% | 42.3% |
+| **0.70** | **37.8%** | **85.9%** | **25.0%** |
+| 0.80 | 25.8% | 87.8% | 13.3% |
+
+At the validation-tuned operating point (mean τ = 0.697) accuracy rises from 71.0% to
+**80.5%** — but coverage falls to **38%**. You reject nearly two-thirds of legitimate
+documents to gain nine points, and every rejection is a document a human now reviews.
+Whether that trade is worth making is a product decision, not a modelling one, and the
+table is here so it can be made explicitly.
+
+Note also that the per-fold τ ranged from **0.435 to 0.835**, and the validation-tuned
+threshold missed its 90% target (delivering 80.5%). The threshold is as unstable as
+everything else here, for the same reason: too few independent document designs.
+
+### Confidence barely detects novelty at all
+
+| Scorer | Error detection | Novelty detection |
+|---|---|---|
+| Max softmax | **0.681** | 0.597 |
+| Mahalanobis (Ledoit-Wolf shrunk) | 0.583 | **0.619** |
+
+AUROC, where 0.5 is random. Max softmax ranks errors usefully but is near-useless for
+novelty. Mahalanobis distance over the 2048-d embeddings — which ignores the three logits
+and asks whether the feature vector is anywhere near the training distribution — recovers
+only 0.022, well inside noise, and is worse at error detection.
+
+**Two methods failing the same way is the finding.** No choice of τ fixes an AUROC of 0.6;
+the score itself carries the problem, not the threshold.
+
+### Why — the `other` class is not really out of distribution
+
+![The excluded documents next to trained classes](reports/ood_vs_trained.jpg)
+
+Three of the four excluded documents are visually *the same kind of object* as the trained
+ID-card class: portrait, card format, text fields. They are `other` because of a taxonomic
+choice in [DATASET.md](DATASET.md), not a visual one.
+
+Rejection rates by document, against the 61.7% of *legitimate* documents also rejected at
+this threshold:
+
+| Document | Rejected | vs. baseline |
+|---|---|---|
+| US border-crossing card | 93.0% | **+31.3** |
+| China home-return permit | 91.3% | **+29.6** |
+| US Social Security card | 72.8% | +11.1 |
+| **US passport card** | **42.5%** | **−19.2** |
+
+So the score is not random — it flags genuinely unfamiliar layouts strongly. But the US
+passport card is accepted *more readily than real driving licences are*, because it is an
+identity card in every visual respect. Asking a vision model to reject it as "unknown"
+means asking it to reproduce a taxonomic decision that is not present in the pixels.
+
+The honest conclusion: **a post-hoc confidence score is the wrong tool for this.** The fix
+is an explicit reject class trained on negatives, or fine-tuning that shapes the feature
+space for the distinction — not a threshold on a head that was never given anywhere to put
+an unfamiliar document.
+
 ## Known limitations
 
-- **No reject option.** Three outputs, always picks one. Shown a US Social Security card
-  (the excluded `other` class) it returns `driving_licence` at 0.49.
+- **Abstention helps but costs too much coverage.** Reaching 80.5% accuracy means
+  answering only 38% of documents. See the section above.
+- **Novelty detection essentially does not work** (AUROC 0.60 for both scorers tried).
 - **A third of designs do not transfer.** 13 of 46 score below 0.60 when unseen.
 - **One document face per type.** MIDV-500 captures a single side, so the model never sees
   the reverse of an ID card — precisely what breaks `09_chn_id`.
@@ -282,7 +355,8 @@ TA19_02.jpg
 
 ## Next steps
 
-1. A confidence threshold and `unknown` class, to handle out-of-distribution input.
+1. An explicit fourth `unknown` class trained on negatives, since the post-hoc
+   confidence scores tried here do not separate near-distribution documents.
 2. Fine-tune `layer4` with augmentation and compare against the linear probe.
 3. Evaluate on MIDV-2019 — the same documents under low light and extreme projective
    distortion — as a robustness test.
