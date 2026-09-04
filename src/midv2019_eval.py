@@ -147,8 +147,9 @@ def main() -> int:
     print(f"  {'':<16} {'MIDV-500':>12} {'MIDV-2019':>12} {'drop':>10}")
     print(f"  {'':<16} {'(easy)':>12} {'(hard)':>12}")
     print("  " + "-" * 52)
-    print(f"  {'known design':<16} {k500:>11.1%} {k19:>12.1%} {k500 - k19:>+10.1%}")
-    print(f"  {'unseen design':<16} {u500:>11.1%} {u19:>12.1%} {u500 - u19:>+10.1%}")
+    # Shown unsigned: the column is labelled "drop", so a leading + would read as a gain.
+    print(f"  {'known design':<16} {k500:>11.1%} {k19:>12.1%} {k500 - k19:>9.1%} pts")
+    print(f"  {'unseen design':<16} {u500:>11.1%} {u19:>12.1%} {u500 - u19:>9.1%} pts")
     print()
     print("  Note: the MIDV-500 'known design' cell is training-set accuracy and is")
     print("  optimistic by construction. The honest comparison for that row is the drop,")

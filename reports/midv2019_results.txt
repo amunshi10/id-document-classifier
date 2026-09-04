@@ -1,0 +1,40 @@
+MIDV-500 4600 frames (training) | MIDV-2019 5520 frames (eval only)
+MIDV-2019 conditions: [np.str_('distorted'), np.str_('lowlight')]
+MIDV-2019 devices:    [np.str_('galaxy_s10'), np.str_('iphone_xs_max')]
+
+  fold 0 done
+  fold 1 done
+  fold 2 done
+  fold 3 done
+  fold 4 done
+  fold 5 done
+
+======================================================================
+ROBUSTNESS: capture conditions vs design generalisation
+======================================================================
+                       MIDV-500    MIDV-2019       drop
+                         (easy)       (hard)
+  ----------------------------------------------------
+  known design           96.5%        94.3%      2.2% pts
+  unseen design          71.0%        68.3%      2.7% pts
+
+  Note: the MIDV-500 'known design' cell is training-set accuracy and is
+  optimistic by construction. The honest comparison for that row is the drop,
+  not the level -- both cells contain designs the model was fitted on, so the
+  difference between them isolates the capture conditions.
+
+======================================================================
+BY CONDITION (MIDV-2019 only)
+======================================================================
+  known designs:
+    distorted    0.9700  (n=11040)
+    lowlight     0.9168  (n=11040)
+  unseen designs:
+    distorted    0.6996  (n=2760)
+    lowlight     0.6656  (n=2760)
+
+======================================================================
+BY CAMERA (known designs)
+======================================================================
+  galaxy_s10       0.9649  (n=11040)
+  iphone_xs_max    0.9219  (n=11040)

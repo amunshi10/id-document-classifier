@@ -220,6 +220,63 @@ The encouraging read: background clutter and hand-held capture cost little.
 
 ---
 
+## Robustness: distortion and low light (MIDV-2019)
+
+[MIDV-2019](https://arxiv.org/abs/2107.00396) re-shoots the same 50 designs under two
+conditions MIDV-500 never covered -- **strong projective distortion** and **low lighting**
+-- on 4K phone cameras. Same designs means no retraining: the six cross-validation heads
+are reused unchanged and MIDV-2019 is purely a harder test set.
+
+That fills in a 2x2 nothing else here could answer:
+
+| | MIDV-500 (easy) | MIDV-2019 (hard) | drop |
+|---|---|---|---|
+| **Known design** | 96.5% | **94.3%** | 2.2 pts |
+| **Unseen design** | 71.0% | **68.3%** | 2.7 pts |
+
+The top row is the informative one: those are designs the fold trained on, so *only* the
+photography changes. **The model barely degrades** -- 2-3 points against conditions the
+MIDV-2019 paper introduces specifically because they were missing and hard.
+
+(The MIDV-500 "known" cell is training-set accuracy, optimistic by construction. Read the
+row as a drop, not a level: both cells contain designs the model was fitted on, so the
+difference isolates the capture conditions.)
+
+### Distortion is easier than darkness, and the reason is the pipeline
+
+| Condition | Known design | Unseen design |
+|---|---|---|
+| distorted | **0.970** | **0.700** |
+| lowlight | 0.917 | 0.666 |
+
+Consistent in both rows, and it looks backwards until you see what preprocessing does:
+
+![Rectification undoes distortion but cannot undo darkness](reports/midv2019_distortion.jpg)
+
+The ground-truth-quad rectification **geometrically undoes projective distortion** -- a
+card held at a sharp angle comes out flat and front-facing. It cannot undo darkness; a
+low-light frame rectifies into a dark, low-contrast crop.
+
+This matters beyond a curiosity. The earlier `crop` vs `full` ablation could not establish
+that document localisation helps (+2.2 points, not significant). This is independent
+evidence that it does: the detect-and-rectify stage turns one of the two hard conditions
+into a near-non-issue.
+
+The direct test would be the `full` variant on MIDV-2019, where the prediction is that
+distortion becomes the *harder* condition rather than the easier one, since nothing
+corrects it. That needs a second feature-extraction pass and is listed under next steps.
+
+### Caveats
+
+- **The `n` values in the saved output are inflated by fold repetition.** Each frame is
+  scored by all six heads, so counts are roughly 6x the distinct frames, and frames within
+  a clip are correlated. The ordering is solid; the precise decimals are soft.
+- A camera gap appears (Galaxy S10 0.965 vs iPhone XS Max 0.922) that this project has not
+  investigated. Could be exposure behaviour, in-camera processing, or which clips happen
+  to be darker.
+
+Full output: [`reports/midv2019_results.txt`](reports/midv2019_results.txt).
+
 ## Pipeline
 
 ```
@@ -360,8 +417,8 @@ an unfamiliar document.
 1. An explicit fourth `unknown` class trained on negatives, since the post-hoc
    confidence scores tried here do not separate near-distribution documents.
 2. Fine-tune `layer4` with augmentation and compare against the linear probe.
-3. Evaluate on MIDV-2019 — the same documents under low light and extreme projective
-   distortion — as a robustness test.
+3. Run the `full` variant on MIDV-2019, to test directly whether rectification is what
+   neutralises projective distortion.
 
 ## Licence and attribution
 
