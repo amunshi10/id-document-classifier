@@ -196,6 +196,14 @@ The honest conclusion is that this experiment lacks the power to resolve the que
 folds over 46 document types cannot separate effects smaller than roughly 10 points.
 Reporting it as a 9-point win would have been wrong.
 
+**A later experiment answers it from a different direction.** The
+[MIDV-2019 robustness results](#robustness-distortion-and-low-light-midv-2019) show that
+strong projective distortion is *easier* for the model than low light -- because rectifying
+through the ground-truth quadrangle geometrically undoes distortion, while nothing undoes
+darkness. So localisation does earn its place; this particular A/B comparison just was not
+powerful enough to show it. Two experiments, one inconclusive and one clear, pointing the
+same way.
+
 ---
 
 ## Robustness across capture conditions
