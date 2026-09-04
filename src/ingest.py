@@ -42,13 +42,32 @@ from pathlib import Path
 
 from PIL import Image
 
-FTP_ROOT = "ftp://smartengines.com/midv-500/dataset"
 OUT_SIZE = 256
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
-PROC_DIR = PROJECT_ROOT / "data" / "processed"
-MANIFEST = PROC_DIR / "manifest.csv"
+
+# Two datasets, same 50 document types, different capture conditions -- and different
+# archive layouts, which is the part that bites. MIDV-500 nests everything under a
+# per-document folder (`01_alb_id/images/TA/TA01_01.tif`); MIDV-2019 does not
+# (`images/LG/LG01_01.tif`). A frame filter written for one silently matches nothing
+# on the other, so the depth is part of the config rather than assumed.
+DATASETS = {
+    "midv500": {
+        "ftp": "ftp://smartengines.com/midv-500/dataset",
+        "proc": "processed",
+        "depth": 3,
+        "conditions": {"T": "table", "K": "keyboard", "H": "hand",
+                       "P": "partial", "C": "clutter"},
+        "devices": {"A": "iphone5", "S": "galaxy_s3"},
+    },
+    "midv2019": {
+        "ftp": "ftp://smartengines.com/midv-500/extra/midv-2019/dataset",
+        "proc": "midv2019",
+        "depth": 2,
+        "conditions": {"D": "distorted", "L": "lowlight"},
+        "devices": {"X": "iphone_xs_max", "G": "galaxy_s10"},
+    },
+}
 
 # The 50 MIDV-500 document type codes, exactly as they appear on the FTP server.
 DOC_TYPES = [
@@ -146,37 +165,66 @@ def rectify(img: Image.Image, quad) -> Image.Image | None:
     return letterbox(out)
 
 
-def download(code: str, dest: Path) -> bool:
-    url = f"{FTP_ROOT}/{code}.zip"
-    proc = subprocess.run(
-        ["curl", "-sS", "--fail", "--connect-timeout", "30", "--max-time", "900",
-         url, "-o", str(dest)],
-        capture_output=True, text=True,
-    )
-    if proc.returncode != 0:
-        print(f"    download failed: {proc.stderr.strip()[:200]}", flush=True)
-        return False
-    return True
+def download(code: str, dest: Path, ftp_root: str, attempts: int = 3) -> bool:
+    """Fetch one archive, retrying transient network failures.
+
+    A 39 GB run over FTP will hit failures that have nothing to do with the data:
+    DNS blips ("could not resolve host"), connection resets, stalled transfers.
+    Losing an archive to one of those and only discovering it at the end wastes the
+    whole run, so retry a few times with backoff before giving up. Permanent errors
+    (a 404 on a code that does not exist) fail all attempts quickly anyway.
+    """
+    url = f"{ftp_root}/{code}.zip"
+    for attempt in range(1, attempts + 1):
+        proc = subprocess.run(
+            ["curl", "-sS", "--fail", "--connect-timeout", "30", "--max-time", "900",
+             "--speed-limit", "10000", "--speed-time", "120", url, "-o", str(dest)],
+            capture_output=True, text=True,
+        )
+        if proc.returncode == 0:
+            return True
+        err = proc.stderr.strip()[:160]
+        if attempt < attempts:
+            wait = 10 * attempt
+            print(f"    attempt {attempt}/{attempts} failed ({err}); retrying in {wait}s",
+                  flush=True)
+            time.sleep(wait)
+        else:
+            print(f"    download failed after {attempts} attempts: {err}", flush=True)
+    dest.unlink(missing_ok=True)
+    return False
 
 
-def process_archive(code: str, zip_path: Path, writer) -> tuple[int, int]:
+def process_archive(code: str, zip_path: Path, writer, cfg: dict, proc_dir: Path
+                    ) -> tuple[int, int]:
     """Render every frame in one archive into both variants. Returns (written, skipped)."""
     label = CLASS_OF[code]
     written = skipped = 0
+    depth = cfg["depth"]
 
     with zipfile.ZipFile(zip_path) as z:
         frames = sorted(
             n for n in z.namelist()
-            if "/images/" in n and n.endswith(".tif") and n.count("/") == 3
+            if "images/" in n and n.endswith(".tif") and n.count("/") == depth
         )
+        if not frames:
+            raise ValueError(
+                f"no frames matched at depth {depth} in {code}. Archive layout "
+                f"changed? First few entries: {z.namelist()[:3]}"
+            )
         for name in frames:
-            # e.g. 19_esp_drvlic/images/TA/TA19_02.tif
-            clip = name.split("/")[2]                 # "TA"
+            # midv500: 19_esp_drvlic/images/TA/TA19_02.tif   -> clip at index 2
+            # midv2019:               images/LG/LG01_19.tif  -> clip at index 1
+            clip = name.split("/")[depth - 1]
             stem = Path(name).stem                    # "TA19_02"
-            condition = CONDITION_NAMES.get(clip[0], "unknown")
-            device = DEVICE_NAMES.get(clip[1], "unknown")
+            condition = cfg["conditions"].get(clip[0], "unknown")
+            device = cfg["devices"].get(clip[1], "unknown")
 
-            gt_name = name.replace("/images/", "/ground_truth/").replace(".tif", ".json")
+            # Replace the first path segment only. MIDV-500 paths start with the
+            # document code ("19_esp_drvlic/images/..."), MIDV-2019 paths start at
+            # "images/" -- so matching on a leading slash silently fails on one of
+            # them and every crop comes out empty.
+            gt_name = name.replace("images/", "ground_truth/", 1).replace(".tif", ".json")
             try:
                 quad = json.loads(z.read(gt_name))["quad"]
             except (KeyError, json.JSONDecodeError):
@@ -191,7 +239,7 @@ def process_archive(code: str, zip_path: Path, writer) -> tuple[int, int]:
 
             rel = Path(label) / code / clip / f"{stem}.jpg"
 
-            full_path = PROC_DIR / "full" / rel
+            full_path = proc_dir / "full" / rel
             full_path.parent.mkdir(parents=True, exist_ok=True)
             letterbox(img).save(full_path, "JPEG", quality=90)
 
@@ -199,7 +247,7 @@ def process_archive(code: str, zip_path: Path, writer) -> tuple[int, int]:
             if quad is not None:
                 cropped = rectify(img, quad)
                 if cropped is not None:
-                    crop_path = PROC_DIR / "crop" / rel
+                    crop_path = proc_dir / "crop" / rel
                     crop_path.parent.mkdir(parents=True, exist_ok=True)
                     cropped.save(crop_path, "JPEG", quality=90)
                     crop_ok = True
@@ -223,9 +271,14 @@ def process_archive(code: str, zip_path: Path, writer) -> tuple[int, int]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--dataset", choices=sorted(DATASETS), default="midv500")
     ap.add_argument("--limit", type=int, help="only the first N document types")
     ap.add_argument("--only", nargs="*", help="document type numbers, e.g. 19 49")
     args = ap.parse_args()
+
+    cfg = DATASETS[args.dataset]
+    proc_dir = PROJECT_ROOT / "data" / cfg["proc"]
+    manifest_path = proc_dir / "manifest.csv"
 
     todo = DOC_TYPES
     if args.only:
@@ -235,15 +288,15 @@ def main() -> int:
         todo = todo[: args.limit]
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
-    PROC_DIR.mkdir(parents=True, exist_ok=True)
+    proc_dir.mkdir(parents=True, exist_ok=True)
 
     # Resume support: a document type is done if it already has a marker file.
-    done_dir = PROC_DIR / ".done"
+    done_dir = proc_dir / ".done"
     done_dir.mkdir(exist_ok=True)
 
     fields = ["path", "doc_type", "label", "clip", "condition", "device", "frame", "has_crop"]
-    fresh = not MANIFEST.exists()
-    manifest_file = MANIFEST.open("a", newline="", encoding="utf-8")
+    fresh = not manifest_path.exists()
+    manifest_file = manifest_path.open("a", newline="", encoding="utf-8")
     writer = csv.DictWriter(manifest_file, fieldnames=fields)
     if fresh:
         writer.writeheader()
@@ -260,15 +313,16 @@ def main() -> int:
         print(f"[{i}/{len(todo)}] {code} ({CLASS_OF[code]}) -- downloading", flush=True)
         zip_path = RAW_DIR / f"{code}.zip"
         t0 = time.time()
-        if not download(code, zip_path):
+        if not download(code, zip_path, cfg["ftp"]):
             zip_path.unlink(missing_ok=True)
             continue
         dl = time.time() - t0
 
         try:
-            written, skipped = process_archive(code, zip_path, writer)
-        except zipfile.BadZipFile:
-            print(f"    corrupt archive, will retry on next run", flush=True)
+            written, skipped = process_archive(code, zip_path, writer, cfg, proc_dir)
+        except (zipfile.BadZipFile, ValueError) as exc:
+            print(f"    {exc if isinstance(exc, ValueError) else 'corrupt archive'}"
+                  f" -- will retry on next run", flush=True)
             zip_path.unlink(missing_ok=True)
             continue
         finally:
@@ -289,7 +343,7 @@ def main() -> int:
 
     mins = (time.time() - start) / 60
     print(f"\nDone: {total_written} frames written in {mins:.1f} min", flush=True)
-    print(f"Manifest: {MANIFEST}", flush=True)
+    print(f"Manifest: {manifest_path}", flush=True)
     return 0
 
 

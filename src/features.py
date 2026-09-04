@@ -38,8 +38,11 @@ from torchvision.models import ResNet50_Weights, resnet50
 from splits import load_manifest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PROC_DIR = PROJECT_ROOT / "data" / "processed"
 MODELS_DIR = PROJECT_ROOT / "models"
+
+# MIDV-500 lands in data/processed, MIDV-2019 in data/midv2019. Same frame layout
+# underneath, so everything below is shared.
+DATA_DIRS = {"midv500": "processed", "midv2019": "midv2019"}
 
 # Images are already 256x256 letterboxed on disk. Resize the whole thing to 224
 # rather than centre-cropping: a centre crop would slice the black bars off unevenly
@@ -52,8 +55,8 @@ PREPROCESS = transforms.Compose([
 
 
 class FrameDataset(Dataset):                                            #protocol for handing out data for a certain training loop
-    def __init__(self, rows: list[dict], variant: str):
-        self.root = PROC_DIR / variant
+    def __init__(self, rows: list[dict], variant: str, proc_dir: Path):
+        self.root = proc_dir / variant
         self.rows = rows
 
     def __len__(self) -> int:
@@ -98,6 +101,7 @@ def build_backbone() -> torch.nn.Module:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--variant", choices=["crop", "full"], required=True)
+    ap.add_argument("--dataset", choices=sorted(DATA_DIRS), default="midv500")
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument(
@@ -106,12 +110,13 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    rows = load_manifest()
+    proc_dir = PROJECT_ROOT / "data" / DATA_DIRS[args.dataset]
+    rows = load_manifest(proc_dir / "manifest.csv")
     if args.variant == "crop":
         # Some 'partial' frames pan off the document entirely and have no crop.
         rows = [r for r in rows if r["has_crop"] == "1"]
     rows = subsample(rows, args.stride)
-    missing = [r for r in rows if not (PROC_DIR / args.variant / r["path"]).exists()]
+    missing = [r for r in rows if not (proc_dir / args.variant / r["path"]).exists()]
     if missing:
         raise SystemExit(
             f"{len(missing)} manifest rows have no {args.variant} image on disk "
@@ -122,7 +127,7 @@ def main() -> int:
 
     model = build_backbone()
     loader = DataLoader(
-        FrameDataset(rows, args.variant),
+        FrameDataset(rows, args.variant, proc_dir),
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.workers,
@@ -144,7 +149,8 @@ def main() -> int:
                 print(f"  {done}/{len(rows)}  {rate:.1f} img/s  eta {eta:.1f} min", flush=True)
 
     MODELS_DIR.mkdir(exist_ok=True)
-    out_path = MODELS_DIR / f"features_{args.variant}.npz"
+    suffix = "" if args.dataset == "midv500" else f"_{args.dataset}"
+    out_path = MODELS_DIR / f"features{suffix}_{args.variant}.npz"
     np.savez_compressed(
         out_path,
         feats=feats,

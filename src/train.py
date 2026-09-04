@@ -95,10 +95,25 @@ def get_splits() -> dict[str, list[str]]:
     return splits
 
 
-def train_head(Xtr, ytr, Xva, yva, n_classes, epochs=60, lr=3e-4, wd=1e-4, seed=SEED):
-    """Linear probe on frozen features, selected on val macro-F1."""
+def train_head(Xtr, ytr, Xva, yva, n_classes, epochs=60, lr=3e-4, wd=1e-4, seed=SEED,
+               hidden=0):
+    """Probe on frozen features, selected on val macro-F1.
+
+    `hidden=0` gives a linear probe -- the default, and what every number in the
+    README uses. A non-zero `hidden` inserts one ReLU layer, which exists to answer a
+    diagnostic question cheaply: if a non-linear head does no better, the frozen
+    features are the bottleneck rather than the decision boundary, and the only way
+    forward is fine-tuning the backbone. That distinction costs seconds to establish
+    here and would cost GPU-hours to establish by fine-tuning directly.
+    """
     torch.manual_seed(seed)
-    head = nn.Linear(Xtr.shape[1], n_classes)
+    if hidden:
+        head = nn.Sequential(
+            nn.Linear(Xtr.shape[1], hidden), nn.ReLU(), nn.Dropout(0.3),
+            nn.Linear(hidden, n_classes),
+        )
+    else:
+        head = nn.Linear(Xtr.shape[1], n_classes)
 
     # Class weighting: ID cards outnumber licences ~19:12 by document type, and a head
     # trained without this quietly learns to prefer the majority class.

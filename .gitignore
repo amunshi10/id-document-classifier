@@ -1,6 +1,7 @@
-# Dataset: rebuild with `python src/ingest.py` rather than committing ~420MB of JPEG
-data/raw/
-data/processed/
+# Datasets: rebuild with `python src/ingest.py [--dataset midv2019]` rather than
+# committing ~570MB of JPEG. data/ is ignored wholesale so a third dataset added
+# later cannot slip into a commit the way data/midv2019/ nearly did.
+data/
 *.zip
 
 # Cached ResNet50 embeddings: regenerate with `python src/features.py` (~20 min)

@@ -45,6 +45,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--folds", type=int, default=6)
     ap.add_argument("--variant", choices=["crop", "full"], default="crop")
+    ap.add_argument("--hidden", type=int, default=0,
+                    help="hidden units; 0 = linear probe (the default)")
     args = ap.parse_args()
 
     data = load_features(args.variant)
@@ -74,7 +76,7 @@ def main() -> int:
 
         head = train_head(
             data["feats"][tr], y[tr], data["feats"][va], y[va],
-            len(TASK_CLASSES), epochs=60, seed=SEED,
+            len(TASK_CLASSES), epochs=60, seed=SEED, hidden=args.hidden,
         )
         head.eval()
         with torch.inference_mode():
