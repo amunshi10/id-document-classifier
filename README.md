@@ -60,6 +60,23 @@ genuinely unseen.
 
 ---
 
+## Contents
+
+- [Why one split was not enough](#why-one-split-was-not-enough) — how an 82.6% headline turned out to be 70.8%
+- [The split rule is worth ~26 points of illusion](#the-split-rule-is-worth-26-points-of-illusion) — 97.4% vs 70.8% from the same model
+- [Generalising to unseen designs is genuinely hard](#generalising-to-unseen-designs-is-genuinely-hard) — 13 of 46 designs score below 0.60
+- [What document localisation is worth: not established](#what-document-localisation-is-worth-not-established) — an ablation that failed to reach significance
+- [Robustness across capture conditions](#robustness-across-capture-conditions) — clutter, hand, keyboard, table, partial
+- [Robustness: distortion and low light (MIDV-2019)](#robustness-distortion-and-low-light-midv-2019) — why distortion is easier than darkness
+- [Pipeline](#pipeline) — the ten scripts and what each costs to run
+- [Demo](#demo) — classify any document image
+- [Saying "I don't know": a partial success](#saying-i-dont-know-a-partial-success) — abstention works; novelty detection does not
+- [Known limitations](#known-limitations) — read this before quoting any number
+- [Next steps](#next-steps) — what is left, and what needs a GPU
+- [Licence and attribution](#licence-and-attribution) — MIT code, CC BY-SA 2.5 figures
+
+---
+
 ## Why one split was not enough
 
 An earlier version of this README reported **82.6%** from a single train/test split. That
@@ -289,19 +306,33 @@ Full output: [`reports/midv2019_results.txt`](reports/midv2019_results.txt).
 
 ```
 ingest.py -> features.py -> train.py -> predict.py
-                         \-> crossval.py    (headline number)
-                         \-> stability.py   (why CV is needed)
-                         \-> occlusion.py   (failure diagnosis)
+                         |
+                         +-> crossval.py       headline number
+                         +-> stability.py      why CV is needed at all
+                         +-> occlusion.py      diagnosing the chn_id failure
+                         +-> reject.py         abstention and novelty detection
+                         +-> midv2019_eval.py  robustness on a second dataset
 ```
 
-| Stage | What it does | Time |
+**Data and training**
+
+| Script | What it does | Time |
 |---|---|---|
-| `ingest.py` | Streams 50 archives: download → perspective-rectify → 256px JPEG → delete. Peak disk ~1.5 GB instead of 33 GB. | ~75 min |
+| `ingest.py` | Streams 50 archives: download → perspective-rectify → 256px JPEG → delete. Peak disk ~1.5 GB instead of 33 GB. `--dataset midv2019` for the second corpus. | ~75 min |
 | `splits.py` | Partitions document *types* into train/val/test, stratified by class. | instant |
 | `features.py` | Caches frozen ResNet50 2048-d embeddings once. | ~11 min |
-| `train.py` | Trains the linear head; val-selected, test touched once. | seconds |
-| `crossval.py` | Six-fold CV across document types. | ~1 min |
+| `train.py` | Trains the linear head; val-selected, test touched once. `--split-mode` reproduces the leakage demo. | seconds |
 | `predict.py` | Classifies any document image. | instant |
+
+**Analysis** — the scripts that produced the findings above
+
+| Script | Question it answers | Time |
+|---|---|---|
+| `crossval.py` | What is the accuracy, with an error bar? | ~1 min |
+| `stability.py` | Is a single split trustworthy? (no) | ~1 min |
+| `occlusion.py` | *Why* does the model fail on `09_chn_id`? | ~3 min |
+| `reject.py` | Can it say "I don't know"? (partly) | ~12 min |
+| `midv2019_eval.py` | Does it survive distortion and low light? (mostly) | ~1 min |
 
 ### Why frozen features rather than full fine-tuning
 
@@ -430,8 +461,17 @@ an unfamiliar document.
 
 ## Licence and attribution
 
-MIDV-500 is distributed under **CC BY-SA 2.5**. The specimen images reproduced in
-`reports/` derive from it. If you publish results or images from this dataset, cite:
+**Code** (`src/`, documentation): [MIT](LICENSE).
+
+**Figures** (`reports/*.jpg`): derived from MIDV-500, which is **CC BY-SA 2.5**. Share-alike
+propagates to derivative works, so those images stay under CC BY-SA 2.5 and keep their
+attribution — they cannot be relicensed under MIT along with the code. Only small derived
+figures are included; no dataset images are redistributed in bulk.
+
+Whether trained weights (`models/*.pt`) are a derivative work of the training data is
+unsettled, and this repository does not assert it either way.
+
+If you publish results or images from this dataset, cite:
 
 > Arlazarov, V.V., Bulatov, K., Chernov, T., Arlazarov, V.L. *MIDV-500: A Dataset for
 > Identity Document Analysis and Recognition on Mobile Devices in Video Stream.*

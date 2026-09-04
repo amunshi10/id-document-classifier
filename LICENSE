@@ -1,0 +1,44 @@
+MIT License
+
+Copyright (c) 2026 Aarnav Munshi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+NOTE ON SCOPE
+
+The MIT terms above cover the source code in src/ and the documentation.
+
+They do NOT cover the images in reports/. Those are derived from MIDV-500, which
+is distributed under Creative Commons Attribution-ShareAlike 2.5 Generic
+(CC BY-SA 2.5). Share-alike propagates to derivative works, so those images
+remain under CC BY-SA 2.5 and must keep their attribution:
+
+  Arlazarov, V.V., Bulatov, K., Chernov, T., Arlazarov, V.L.
+  "MIDV-500: A Dataset for Identity Documents Analysis and Recognition on
+  Mobile Devices in Video Stream." Computer Optics 43(5), 2019.
+  https://arxiv.org/abs/1807.05786
+  Dataset: ftp://smartengines.com/midv-500/
+
+No dataset images are redistributed in bulk; reports/ contains only small
+derived figures used to illustrate results.
+
+Whether trained model weights (models/*.pt) constitute a derivative work of the
+training data is unsettled and not asserted either way here.
